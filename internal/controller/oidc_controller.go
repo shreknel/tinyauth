@@ -118,9 +118,14 @@ func (controller *OIDCController) authorizeHandler(c *gin.Context) {
 	userContext, err := utils.GetContext(c)
 	if err != nil || !userContext.IsLoggedIn {
 		// User not authenticated, redirect to login
+		// Build the full authorize URL to redirect back to after login
+		authorizeURL := fmt.Sprintf("%s%s", controller.config.AppURL, c.Request.URL.Path)
+		if c.Request.URL.RawQuery != "" {
+			authorizeURL = fmt.Sprintf("%s?%s", authorizeURL, c.Request.URL.RawQuery)
+		}
 		loginURL := fmt.Sprintf("%s/login?redirect_uri=%s&client_id=%s&response_type=%s&scope=%s&state=%s&nonce=%s&code_challenge=%s&code_challenge_method=%s",
 			controller.config.AppURL,
-			url.QueryEscape(c.Request.URL.String()),
+			url.QueryEscape(authorizeURL),
 			url.QueryEscape(clientID),
 			url.QueryEscape(responseType),
 			url.QueryEscape(scope),
@@ -139,7 +144,7 @@ func (controller *OIDCController) authorizeHandler(c *gin.Context) {
 	}
 
 	// Generate authorization code
-	authCode, err := controller.oidc.GenerateAuthorizationCode(&userContext, clientID, redirectURI, scopes)
+	authCode, err := controller.oidc.GenerateAuthorizationCode(&userContext, clientID, redirectURI, scopes, nonce)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to generate authorization code")
 		controller.redirectError(c, redirectURI, state, "server_error", "Internal server error")
@@ -219,7 +224,7 @@ func (controller *OIDCController) tokenHandler(c *gin.Context) {
 	}
 
 	// Validate authorization code
-	userContext, scopes, err := controller.oidc.ValidateAuthorizationCode(code, clientID, redirectURI)
+	userContext, scopes, nonce, err := controller.oidc.ValidateAuthorizationCode(code, clientID, redirectURI)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to validate authorization code")
 		controller.tokenError(c, "invalid_grant", "Invalid or expired authorization code")
@@ -245,10 +250,6 @@ func (controller *OIDCController) tokenHandler(c *gin.Context) {
 	}
 
 	if hasOpenID {
-		nonce := c.PostForm("nonce")
-		if nonce == "" {
-			nonce = c.Query("nonce")
-		}
 		idToken, err = controller.oidc.GenerateIDToken(userContext, clientID, nonce)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to generate ID token")

@@ -10,6 +10,7 @@ from urllib.parse import urlparse, parse_qs
 import requests
 from authlib.integrations.requests_client import OAuth2Session
 from authlib.oidc.core import CodeIDToken
+from authlib.jose import jwt
 
 # ---- config via env ----
 ISSUER        = os.environ["OIDC_ISSUER"]
@@ -105,13 +106,23 @@ class CallbackHandler(BaseHTTPRequestHandler):
         )
 
         # ---- ID token validation ----
-        id_token = CodeIDToken(
+        # Decode and validate the ID token
+        jwk_set = requests.get(discovery["jwks_uri"]).json()
+        
+        # Decode the JWT
+        decoded = jwt.decode(
             token["id_token"],
-            client_id=CLIENT_ID,
-            issuer=discovery["issuer"],
-            nonce=nonce,
-            jwk_set=requests.get(discovery["jwks_uri"]).json(),
+            key=jwk_set,
+            claims_options={
+                "iss": {"essential": True, "value": discovery["issuer"]},
+                "aud": {"essential": True, "value": CLIENT_ID},
+                "nonce": {"essential": True, "value": nonce},
+            }
         )
+        decoded.validate()
+        
+        # Use decoded claims directly (it's a dict-like object)
+        id_token = decoded
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")

@@ -154,7 +154,7 @@ func (oidc *OIDCService) ValidateScope(client *model.OIDCClient, requestedScopes
 	return validScopes, nil
 }
 
-func (oidc *OIDCService) GenerateAuthorizationCode(userContext *config.UserContext, clientID string, redirectURI string, scopes []string) (string, error) {
+func (oidc *OIDCService) GenerateAuthorizationCode(userContext *config.UserContext, clientID string, redirectURI string, scopes []string, nonce string) (string, error) {
 	code := uuid.New().String()
 
 	// Store authorization code in a temporary structure
@@ -165,6 +165,7 @@ func (oidc *OIDCService) GenerateAuthorizationCode(userContext *config.UserConte
 		"clientID":    clientID,
 		"redirectURI": redirectURI,
 		"scopes":      scopes,
+		"nonce":       nonce,
 		"expiresAt":   time.Now().Add(10 * time.Minute).Unix(),
 	}
 
@@ -181,6 +182,10 @@ func (oidc *OIDCService) GenerateAuthorizationCode(userContext *config.UserConte
 		"exp":         time.Now().Add(10 * time.Minute).Unix(),
 		"iat":         time.Now().Unix(),
 	}
+	
+	if nonce != "" {
+		claims["nonce"] = nonce
+	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	codeToken, err := token.SignedString(oidc.privateKey)
@@ -192,7 +197,7 @@ func (oidc *OIDCService) GenerateAuthorizationCode(userContext *config.UserConte
 	return codeToken, nil
 }
 
-func (oidc *OIDCService) ValidateAuthorizationCode(codeToken string, clientID string, redirectURI string) (*config.UserContext, []string, error) {
+func (oidc *OIDCService) ValidateAuthorizationCode(codeToken string, clientID string, redirectURI string) (*config.UserContext, []string, string, error) {
 	token, err := jwt.Parse(codeToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -201,31 +206,31 @@ func (oidc *OIDCService) ValidateAuthorizationCode(codeToken string, clientID st
 	})
 
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse authorization code: %w", err)
+		return nil, nil, "", fmt.Errorf("failed to parse authorization code: %w", err)
 	}
 
 	if !token.Valid {
-		return nil, nil, errors.New("invalid authorization code")
+		return nil, nil, "", errors.New("invalid authorization code")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, nil, errors.New("invalid token claims")
+		return nil, nil, "", errors.New("invalid token claims")
 	}
 
 	// Verify client_id and redirect_uri match
 	if claims["client_id"] != clientID {
-		return nil, nil, errors.New("client_id mismatch")
+		return nil, nil, "", errors.New("client_id mismatch")
 	}
 
 	if claims["redirect_uri"] != redirectURI {
-		return nil, nil, errors.New("redirect_uri mismatch")
+		return nil, nil, "", errors.New("redirect_uri mismatch")
 	}
 
 	// Check expiration
 	exp, ok := claims["exp"].(float64)
 	if !ok || time.Now().Unix() > int64(exp) {
-		return nil, nil, errors.New("authorization code expired")
+		return nil, nil, "", errors.New("authorization code expired")
 	}
 
 	userContext := &config.UserContext{
@@ -245,7 +250,9 @@ func (oidc *OIDCService) ValidateAuthorizationCode(codeToken string, clientID st
 		}
 	}
 
-	return userContext, scopes, nil
+	nonce := getStringClaim(claims, "nonce")
+
+	return userContext, scopes, nonce, nil
 }
 
 func (oidc *OIDCService) GenerateAccessToken(userContext *config.UserContext, clientID string, scopes []string) (string, error) {
