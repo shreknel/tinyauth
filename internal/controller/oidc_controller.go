@@ -55,10 +55,10 @@ func (controller *OIDCController) discoveryHandler(c *gin.Context) {
 
 	discovery := map[string]interface{}{
 		"issuer":                                issuer,
-		"authorization_endpoint":                fmt.Sprintf("%s/oidc/authorize", baseURL),
-		"token_endpoint":                        fmt.Sprintf("%s/oidc/token", baseURL),
-		"userinfo_endpoint":                     fmt.Sprintf("%s/oidc/userinfo", baseURL),
-		"jwks_uri":                              fmt.Sprintf("%s/oidc/jwks", baseURL),
+		"authorization_endpoint":                fmt.Sprintf("%s/api/oidc/authorize", baseURL),
+		"token_endpoint":                        fmt.Sprintf("%s/api/oidc/token", baseURL),
+		"userinfo_endpoint":                     fmt.Sprintf("%s/api/oidc/userinfo", baseURL),
+		"jwks_uri":                              fmt.Sprintf("%s/api/oidc/jwks", baseURL),
 		"response_types_supported":              []string{"code"},
 		"subject_types_supported":               []string{"public"},
 		"id_token_signing_alg_values_supported": []string{"RS256"},
