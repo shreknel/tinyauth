@@ -109,20 +109,23 @@ class CallbackHandler(BaseHTTPRequestHandler):
         # Decode and validate the ID token
         jwk_set = requests.get(discovery["jwks_uri"]).json()
         
-        # Decode the JWT
+        # Decode the JWT - make nonce optional if not provided
+        claims_options = {
+            "iss": {"essential": True, "value": discovery["issuer"]},
+            "aud": {"essential": True, "value": CLIENT_ID},
+        }
+        if nonce:
+            claims_options["nonce"] = {"essential": True, "value": nonce}
+        
         decoded = jwt.decode(
             token["id_token"],
             key=jwk_set,
-            claims_options={
-                "iss": {"essential": True, "value": discovery["issuer"]},
-                "aud": {"essential": True, "value": CLIENT_ID},
-                "nonce": {"essential": True, "value": nonce},
-            }
+            claims_options=claims_options
         )
         decoded.validate()
         
-        # Use decoded claims directly (it's a dict-like object)
-        id_token = decoded
+        # Convert JWTClaims to dict for display
+        id_token_claims = dict(decoded)
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -131,19 +134,62 @@ class CallbackHandler(BaseHTTPRequestHandler):
         html = f"""
         <!DOCTYPE html>
         <html>
-        <head><title>OIDC Login Successful</title></head>
+        <head>
+            <title>OIDC Login Successful</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    max-width: 800px;
+                    margin: 50px auto;
+                    padding: 20px;
+                    background: #f5f5f5;
+                }}
+                .success-box {{
+                    background: white;
+                    border-radius: 8px;
+                    padding: 30px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }}
+                h1 {{
+                    color: #4CAF50;
+                    margin-top: 0;
+                }}
+                pre {{
+                    background: #f9f9f9;
+                    padding: 15px;
+                    border-radius: 4px;
+                    overflow-x: auto;
+                    border: 1px solid #ddd;
+                }}
+                .info {{
+                    color: #666;
+                    margin: 20px 0;
+                }}
+            </style>
+        </head>
         <body>
-            <h1>✅ Login Successful!</h1>
-            <p>You can close this window.</p>
-            <hr>
-            <h2>ID Token Claims:</h2>
-            <pre>{json.dumps(id_token.claims, indent=2)}</pre>
+            <div class="success-box">
+                <h1>✅ OIDC Login Successful!</h1>
+                <p class="info">You have successfully authenticated via OIDC. You can close this window.</p>
+                <hr>
+                <h2>ID Token Claims:</h2>
+                <pre>{json.dumps(id_token_claims, indent=2)}</pre>
+                <hr>
+                <p><strong>Access Token:</strong> <code>{token.get('access_token', 'N/A')[:50]}...</code></p>
+                <p><strong>Token Type:</strong> {token.get('token_type', 'N/A')}</p>
+                <p><strong>Expires In:</strong> {token.get('expires_in', 'N/A')} seconds</p>
+            </div>
         </body>
         </html>
         """
         self.wfile.write(html.encode())
 
-        print(json.dumps(id_token.claims, indent=2))
+        print("\n" + "=" * 60)
+        print("✅ OIDC Authentication Successful!")
+        print("=" * 60)
+        print("\nID Token Claims:")
+        print(json.dumps(id_token_claims, indent=2))
+        print("\n" + "=" * 60)
         sys.exit(0)
 
 # ---- run ----
