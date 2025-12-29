@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  tinyauth:
+    container_name: tinyauth-oidc-test
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["--experimental.configfile=/config/config.yaml"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+      - ./config.yaml:/config/config.yaml:ro
+    extra_hosts:
+      - "auth.example.test:127.0.0.1"
+    healthcheck:
+      test: ["CMD", "tinyauth", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  oidc-whoami:
+    container_name: oidc-whoami-test
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - OIDC_ISSUER=http://auth.example.test:3000
+      - CLIENT_ID=testclient
+      - CLIENT_SECRET=test-secret-123
+    ports:
+      - "8765:8765"
+    depends_on:
+      - tinyauth
+    network_mode: "host"
+    extra_hosts:
+      - "auth.example.test:127.0.0.1"
+    # Note: Using host network mode so the callback can work properly
+    # The redirect URI must match what's configured in tinyauth (http://localhost:8765/callback)
+    # Using auth.example.test domain to satisfy cookie domain validation requirements (needs 3+ parts, not in public suffix list)
+

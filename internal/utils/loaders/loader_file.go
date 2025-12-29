@@ -16,8 +16,12 @@ func (f *FileLoader) Load(args []string, cmd *cli.Command) (bool, error) {
 		return false, err
 	}
 
-	// I guess we are using traefik as the root name
+	// Check for experimental config file flag (supports both traefik.* and direct format)
 	configFileFlag := "traefik.experimental.configFile"
+	if _, ok := flags[configFileFlag]; !ok {
+		// Try the direct format (experimental.configfile)
+		configFileFlag = "experimental.configfile"
+	}
 
 	if _, ok := flags[configFileFlag]; !ok {
 		return false, nil

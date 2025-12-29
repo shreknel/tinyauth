@@ -139,7 +139,7 @@ func (controller *OIDCController) authorizeHandler(c *gin.Context) {
 	}
 
 	// Generate authorization code
-	authCode, err := controller.oidc.GenerateAuthorizationCode(userContext, clientID, redirectURI, scopes)
+	authCode, err := controller.oidc.GenerateAuthorizationCode(&userContext, clientID, redirectURI, scopes)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to generate authorization code")
 		controller.redirectError(c, redirectURI, state, "server_error", "Internal server error")
