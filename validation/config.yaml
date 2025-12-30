@@ -1,4 +1,4 @@
-appUrl: "http://auth.aande.top"
+appUrl: "http://auth.example.com"
 logLevel: "info"
 databasePath: "/data/tinyauth.db"
 
@@ -11,7 +11,7 @@ auth:
 
 oidc:
   enabled: true
-  issuer: "http://auth.aande.top"
+  issuer: "http://auth.example.com"
   accessTokenExpiry: 3600
   idTokenExpiry: 3600
   clients:
@@ -19,7 +19,7 @@ oidc:
       clientSecret: "test-secret-123"
       clientName: "OIDC Test Client"
       redirectUris:
-        - "http://client.aande.top/callback"
+        - "http://client.example.com/callback"
         - "http://localhost:8765/callback"
         - "http://127.0.0.1:8765/callback"
       grantTypes:

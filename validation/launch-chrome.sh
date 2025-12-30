@@ -42,7 +42,7 @@ if [ -z "$CHROME_CMD" ]; then
     echo "Chrome not found in container. This is expected."
     echo "Please launch Chrome manually on your host with:"
     echo ""
-    echo '  google-chrome --host-resolver-rules="MAP auth.aande.top 127.0.0.1" http://auth.aande.top/'
+    echo '  google-chrome --host-resolver-rules="MAP auth.example.com 127.0.0.1" http://auth.example.com/'
     echo ""
     echo "Or use the launch script on your host:"
     echo "  ./launch-chrome.sh"
@@ -55,14 +55,14 @@ echo "Launching Chrome with host-resolver-rules..."
 echo ""
 
 $CHROME_CMD \
-    --host-resolver-rules="MAP auth.aande.top 127.0.0.1" \
+    --host-resolver-rules="MAP auth.example.com 127.0.0.1" \
     --new-window \
-    http://auth.aande.top/ \
+    http://auth.example.com/ \
     > /dev/null 2>&1 &
 
 echo "✓ Chrome launched!"
 echo ""
-echo "Access tinyauth at: http://auth.aande.top/"
+echo "Access tinyauth at: http://auth.example.com/"
 echo "OIDC test client callback: http://127.0.0.1:8765/callback"
 echo ""
 

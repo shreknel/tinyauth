@@ -21,19 +21,19 @@ else
 fi
 
 echo "Using: $CHROME_CMD"
-echo "Opening: http://client.aande.top/ (OIDC test client)"
+echo "Opening: http://client.example.com/ (OIDC test client)"
 echo ""
 
 $CHROME_CMD \
-    --host-resolver-rules="MAP auth.aande.top 127.0.0.1, MAP client.aande.top 127.0.0.1" \
+    --host-resolver-rules="MAP auth.example.com 127.0.0.1, MAP client.example.com 127.0.0.1" \
     --disable-features=HttpsOnlyMode \
-    --unsafely-treat-insecure-origin-as-secure=http://auth.aande.top,http://client.aande.top \
+    --unsafely-treat-insecure-origin-as-secure=http://auth.example.com,http://client.example.com \
     --user-data-dir=/tmp/chrome-test-profile-$(date +%s) \
     --new-window \
-    http://client.aande.top/ \
+    http://client.example.com/ \
     > /dev/null 2>&1 &
 
 echo "Chrome launched!"
-echo "OIDC test client: http://client.aande.top/"
-echo "Tinyauth: http://auth.aande.top/"
+echo "OIDC test client: http://client.example.com/"
+echo "Tinyauth: http://auth.example.com/"
 

@@ -12,8 +12,8 @@ services:
       - "--no-resolv"
       - "--server=8.8.8.8"
       - "--server=8.8.4.4"
-      - "--address=/auth.aande.top/172.28.0.2"
-      - "--address=/client.aande.top/172.28.0.2"
+      - "--address=/auth.example.com/172.28.0.2"
+      - "--address=/client.example.com/172.28.0.2"
     # DNS port not exposed to host - only needed for container-to-container communication
     # Chrome uses --host-resolver-rules instead
     networks:
@@ -64,7 +64,7 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      - OIDC_ISSUER=http://auth.aande.top
+      - OIDC_ISSUER=http://auth.example.com
       - CLIENT_ID=testclient
       - CLIENT_SECRET=test-secret-123
     # Port not exposed to host - accessed via nginx

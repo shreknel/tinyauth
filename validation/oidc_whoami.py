@@ -16,7 +16,7 @@ from authlib.jose import jwt
 ISSUER        = os.environ["OIDC_ISSUER"]
 CLIENT_ID    = os.environ["CLIENT_ID"]
 CLIENT_SECRET= os.environ.get("CLIENT_SECRET")  # optional (public clients ok)
-REDIRECT_URI = "http://client.aande.top/callback"
+REDIRECT_URI = "http://client.example.com/callback"
 SCOPE        = "openid profile email"
 
 # ---- discovery ----
