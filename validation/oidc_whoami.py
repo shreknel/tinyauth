@@ -190,7 +190,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
         print("\nID Token Claims:")
         print(json.dumps(id_token_claims, indent=2))
         print("\n" + "=" * 60)
-        sys.exit(0)
+        # Don't exit - keep server running for multiple test flows
 
 # ---- run ----
 print("=" * 60)
